@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فاهم - نسخة تجريبية</title>
+<style>
+  :root{
+    --bg:#edf4f3; --surface:#ffffff; --ink:#1b3340; --muted:#5a7380; --line:#d3e1e1;
+    --accent:#2b8a98; --accent-ink:#ffffff; --accent-soft:#d9eff1;
+    --ok:#1f7a4d; --ok-bg:#e1f3e8; --bad:#b3261e; --bad-bg:#fbe6e4; --warn:#8f5b00; --warn-bg:#fcefd3;
+    --sh:0 1px 2px rgba(20,50,60,.06),0 8px 22px rgba(20,50,60,.07);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      color-scheme:dark;
+      --bg:#0e1b22; --surface:#162832; --ink:#e6f0f2; --muted:#9bb2bb; --line:#27414d;
+      --accent:#58c0cf; --accent-ink:#0e1b22; --accent-soft:#17383f;
+      --ok:#74d6a0; --ok-bg:#163a2b; --bad:#ff9189; --bad-bg:#40201f; --warn:#f0bb59; --warn-bg:#3a2d12;
+      --sh:0 1px 2px rgba(0,0,0,.3);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Cairo","Noto Naskh Arabic","Segoe UI",Tahoma,Arial,sans-serif;line-height:1.75;font-size:17px}
+  button{font:inherit;color:inherit;cursor:pointer}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  h1{font-size:28px;margin:0 0 6px;line-height:1.4} h2{font-size:21px;margin:0 0 14px;line-height:1.6} h3{font-size:19px;margin:0 0 10px}
+  p{margin:0 0 10px;color:var(--muted)}
+  .page{max-width:720px;margin:0 auto;padding:16px 16px 90px}
+  .hide{display:none!important}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--sh);margin-bottom:14px}
+  .primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:12px 22px;font-weight:700}
+  .primary[disabled]{opacity:.45;cursor:default}
+  .ghost{background:transparent;border:1px solid var(--line);border-radius:12px;padding:10px 18px}
+  .ghost[disabled]{opacity:.35;cursor:default}
+  .sm{padding:5px 12px;font-size:15px;border-radius:9px}
+  .danger{color:var(--bad);border-color:var(--bad)}
+  .block{width:100%}
+  .inp{font:inherit;width:100%;padding:11px 13px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);margin-bottom:10px}
+  .inp.big{font-size:22px;text-align:center;letter-spacing:3px;direction:ltr}
+  textarea.inp{resize:vertical;min-height:90px}
+  label.lb{display:block;font-size:15px;color:var(--muted);margin:2px 0 4px}
+  .err{color:var(--bad);min-height:26px;font-size:15px;margin-bottom:6px}
+  .note{border-radius:12px;padding:12px 14px;background:var(--accent-soft);font-size:15.5px;margin-bottom:14px}
+  .note.bad{background:var(--bad-bg);color:var(--bad)}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:50;font-size:15px}
+  .toast.on{opacity:1;transform:translateX(-50%)}
+  .chip{display:inline-block;border-radius:999px;padding:1px 12px;font-size:14px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+
+  /* top bar */
+  .top{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:10px 16px}
+  .brand{font-weight:800;font-size:20px;color:var(--accent);margin-inline-end:auto}
+  .who{display:flex;align-items:center;gap:8px;font-size:15px}
+  .wn{font-weight:700}
+
+  /* login */
+  .login{max-width:440px;margin:0 auto;padding:36px 16px}
+  .logo{width:78px;height:78px;border-radius:24px;background:var(--accent-soft);display:grid;place-items:center;font-size:40px;margin:0 auto 14px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--accent-soft);border-radius:14px;padding:4px;margin-bottom:16px}
+  .seg button{border:0;background:transparent;border-radius:11px;padding:10px;font-weight:700;color:var(--muted)}
+  .seg button.on{background:var(--surface);color:var(--accent);box-shadow:var(--sh)}
+  details{margin-top:18px;font-size:15px;color:var(--muted)}
+  details li{margin:2px 0}
+
+  /* student */
+  .hello{background:linear-gradient(135deg,var(--accent-soft),var(--surface));border:1px solid var(--line);border-radius:20px;padding:22px;margin-bottom:18px}
+  .grid{display:grid;gap:12px}
+  .scard{display:flex;align-items:center;gap:14px;text-align:right;width:100%;background:color-mix(in srgb,var(--c) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));border-radius:18px;padding:16px}
+  .sicon{width:56px;height:56px;border-radius:16px;background:color-mix(in srgb,var(--c) 28%,var(--surface));display:grid;place-items:center;font-size:28px;flex:none}
+  .stext b{display:block;font-size:18px} .stext span{font-size:14.5px;color:var(--muted)}
+  .lrow{display:flex;align-items:center;gap:12px;width:100%;text-align:right;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px}
+  .lrow.lock{opacity:.5;cursor:default}
+  .num{flex:none;width:38px;height:38px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800}
+  .lrow .t{flex:1} .lrow .t span{display:block;font-size:14px;color:var(--muted)}
+  .back{background:none;border:0;color:var(--accent);font-weight:700;padding:6px 0;margin-bottom:6px}
+  .banner{border-radius:20px;padding:20px;margin-bottom:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 30%,var(--surface)),var(--surface));border:1px solid var(--line);display:flex;gap:14px;align-items:center}
+  .banner .sicon{width:64px;height:64px;font-size:34px}
+  .cta{position:fixed;inset-inline:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 16px;z-index:9}
+  .cta>div{max-width:720px;margin:0 auto;display:flex;gap:12px;align-items:center}
+  .cta .primary{flex:1}
+
+  /* lecture body + visuals */
+  .lec .lh{margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+  .lec .lh::before{content:"";width:6px;height:22px;border-radius:3px;background:var(--accent)}
+  .lec p{color:var(--ink)} .lec ul{padding-inline-start:20px;margin:0 0 12px} .lec li{margin:4px 0}
+  .v-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+  .vcard{border-radius:18px;padding:16px 12px;text-align:center;display:flex;flex-direction:column;gap:3px;align-items:center}
+  .vcard b{font-size:18px} .vcard span{font-size:15px}
+  .vicon{font-size:34px;line-height:1.2}
+  .c1{background:#dff1f3;color:#14515b} .c2{background:#e7e5fa;color:#3d3a85}
+  .c3{background:#e2f2e6;color:#235a37} .c4{background:#fcebd2;color:#7a4d08}
+  @media (prefers-color-scheme: dark){.c1{background:#17383f;color:#a9e3ec}.c2{background:#27254d;color:#c9c6f5}.c3{background:#173a26;color:#a8e2bf}.c4{background:#3d2e14;color:#f3d49a}}
+  .ladder{display:flex;align-items:flex-end;gap:8px;margin:6px 0 8px}
+  .ladder .step{flex:1;border-radius:14px 14px 6px 6px;padding:8px 4px;text-align:center;display:flex;flex-direction:column;justify-content:flex-end;gap:0;line-height:1.35}
+  .ladder .step em{font-style:normal;font-size:13px;opacity:.7} .ladder .step b{font-size:17px} .ladder .step span{font-size:13px}
+  .s1{background:#dff1f3;color:#14515b}.s2{background:#cfe9d9;color:#235a37}.s3{background:#fbe5b9;color:#7a4d08}.s4{background:#e0dcf7;color:#3d3a85}
+  @media (prefers-color-scheme: dark){.s1{background:#17383f;color:#a9e3ec}.s2{background:#173a26;color:#a8e2bf}.s3{background:#3d2e14;color:#f3d49a}.s4{background:#27254d;color:#c9c6f5}}
+  .steps{margin:0 0 8px;position:relative}
+  .steps::before{content:"";position:absolute;inset-block:18px;inset-inline-start:18px;width:3px;background:var(--line);border-radius:2px}
+  .st{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px;position:relative}
+  .st .dot{flex:none;width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;z-index:1}
+  .st .tx{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:9px 14px;flex:1}
+  .eq{display:flex;flex-direction:column;align-items:center;gap:0;margin:8px 0}
+  .eq .chip{font-size:16px;padding:6px 18px}
+  .eq .two{display:flex;gap:10px;position:relative;padding-top:18px}
+  .eq .two::before{content:"";position:absolute;top:0;left:25%;right:25%;height:18px;border:2px solid var(--line);border-bottom:0;border-radius:14px 14px 0 0}
+  .eq .real{background:var(--ok-bg);color:var(--ok)} .eq .err2{background:var(--bad-bg);color:var(--bad)}
+  .eq .main{background:var(--accent-soft);color:var(--accent)}
+
+  /* exam */
+  .ebar{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0 10px;border-bottom:1px solid var(--line)}
+  .erow{display:flex;justify-content:space-between;align-items:center;font-size:16px;color:var(--muted)}
+  .clock{font-variant-numeric:tabular-nums;font-weight:800;color:var(--ink);font-size:22px}
+  .clock.low{color:var(--bad)}
+  .track{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:8px}
+  .fill{height:100%;width:100%;background:var(--accent);transform-origin:right}
+  .fill.low{background:var(--bad)}
+  .warn{font-size:15px;color:var(--bad);font-weight:700;min-height:22px}
+  .qhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:15px;color:var(--muted)}
+  .flagbtn{background:transparent;border:1px solid var(--line);border-radius:8px;padding:2px 12px;font-size:15px;color:var(--muted)}
+  .flagbtn.on{background:var(--warn-bg);border-color:var(--warn);color:var(--warn);font-weight:700}
+  .opt{display:flex;gap:12px;align-items:center;width:100%;text-align:right;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px}
+  .opt i{flex:none;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:14px;color:var(--muted)}
+  .opt.sel{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+  .opt.sel i{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .nav{display:flex;gap:10px;margin-top:14px} .nav .grow{flex:1}
+  .palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:8px;margin-top:20px}
+  .cell{height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);font-size:15px;padding:0;position:relative}
+  .cell.done{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+  .cell.flag::after{content:"";position:absolute;top:3px;left:3px;width:9px;height:9px;border-radius:50%;background:var(--warn)}
+  .cell.cur{outline:2.5px solid var(--ink);outline-offset:2px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin-top:10px}
+  dialog{border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);padding:22px;max-width:92vw;width:420px;font:inherit}
+  dialog::backdrop{background:rgba(5,10,20,.6)}
+  .sumrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+  .dlg-actions{display:flex;gap:10px;margin-top:18px} .dlg-actions .primary{flex:1}
+
+  /* result */
+  .hero{display:flex;gap:20px;align-items:center}
+  .ring{flex:none;position:relative;width:132px;height:132px}
+  .ring svg{transform:rotate(-90deg);width:100%;height:100%}
+  .ring circle{fill:none;stroke-width:11}
+  .ring .bg{stroke:var(--line)} .ring .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+  .ring .fg.mid{stroke:var(--warn)} .ring .fg.lo{stroke:var(--bad)}
+  .ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:30px}
+  .grade{font-size:22px;font-weight:800}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .stat{border-radius:14px;padding:10px;text-align:center;font-size:14px}
+  .stat b{display:block;font-size:24px;line-height:1.2}
+  .stat.ok{background:var(--ok-bg);color:var(--ok)} .stat.no{background:var(--bad-bg);color:var(--bad)} .stat.sk{background:var(--warn-bg);color:var(--warn)}
+  .tabs{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 16px;font-size:15px}
+  .tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .rev{border-radius:14px;padding:14px 16px;margin-bottom:12px;border:1px solid var(--line);background:var(--surface);border-inline-start-width:5px}
+  .rev.ok{border-inline-start-color:var(--ok)} .rev.no{border-inline-start-color:var(--bad)} .rev.sk{border-inline-start-color:var(--warn)}
+  .rev b{display:block;margin-bottom:6px}
+  .ans{font-size:16px;margin:2px 0} .ans.right{color:var(--ok);font-weight:700} .ans.wrong{color:var(--bad)}
+  .rev small{display:block;color:var(--muted);font-size:15px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+
+  /* staff */
+  .tabs2{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px}
+  .tabs2 .tab{white-space:nowrap}
+  .row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .row:last-child{border:0}
+  .row .grow{flex:1;min-width:140px}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;direction:ltr;background:var(--accent-soft);color:var(--accent);padding:2px 10px;border-radius:8px;font-weight:700;letter-spacing:1px}
+  .newcode{background:var(--ok-bg);border:1px solid var(--ok);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .newcode .code{font-size:22px}
+  .bar2{height:8px;border-radius:4px;background:var(--line);overflow:hidden;width:100%}
+  .bar2 i{display:block;height:100%;background:var(--accent)} .bar2 i.lo{background:var(--bad)}
+  .qopt{font-size:15.5px;margin:1px 0;color:var(--muted)} .qopt.c{color:var(--ok);font-weight:700}
+  .checks{display:flex;flex-wrap:wrap;gap:8px}
+  .checks label{display:flex;gap:6px;align-items:center;font-size:15px;border:1px solid var(--line);border-radius:999px;padding:3px 12px;background:var(--surface)}
+  .opts-grid{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start}
+  .opts-grid input[type=radio]{margin-top:16px;accent-color:var(--accent)}
+  @media (max-width:440px){.hero{flex-direction:column;text-align:center}.v-split{gap:8px}.ladder{gap:5px}}
+  @media (prefers-reduced-motion: reduce){.ring .fg,.toast{transition:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+'use strict';
+/* ============ helpers ============ */
+const $ = id => document.getElementById(id);
+const AR = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+const fmt = s => AR(String(Math.floor(s/60)).padStart(2,'0')) + ':' + AR(String(s%60).padStart(2,'0'));
+const LET = ['أ','ب','ج','د'];
+const uid = () => Math.random().toString(36).slice(2,9);
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; };
+function el(tag, props, ...kids){
+  const e = document.createElement(tag);
+  if(props) for(const k in props){
+    const v = props[k];
+    if(k==='class') e.className = v;
+    else if(k==='on') for(const ev in v) e.addEventListener(ev, v[ev]);
+    else if(k==='style') e.style.cssText = v;
+    else if(v===true) e.setAttribute(k,'');
+    else if(v!==false && v!=null) e.setAttribute(k, v);
+  }
+  kids.flat(Infinity).forEach(c => { if(c==null||c===false) return; e.append(c.nodeType ? c : document.createTextNode(String(c))); });
+  return e;
+}
+const norm = c => String(c).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim().toUpperCase();
+function genCode(n=8){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const r=new Uint32Array(n); crypto.getRandomValues(r); return Array.from(r,x=>A[x%A.length]).join(''); }
+function uniqueCode(){ let c; do{ c=genCode(); }while(DB.students.some(s=>s.code===c)||DB.staff.some(s=>s.code===c)); return c; }
+let tt; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2200); }
+function copy(t){ try{ navigator.clipboard.writeText(t).then(()=>toast('اتنسخ'),()=>toast(t)); }catch(e){ toast(t); } }
+const dt = ts => new Date(ts).toLocaleString('ar-EG',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+
+/* ============ data (shared online) ============ */
+const KEY = 'fahim-demo-v2';
+const STAT_BODY = `# الإحصاء الوصفي والاستدلالي
+[[split]]
+# مستويات القياس النفسي
+[[ladder]]
+# أنواع القياس
+[[direct]]
+# مبادئ القياس النفسي
+1. أداء الفرد يمكن قياسه وتقديره (أي شيء يصدر من الإنسان)
+2. أداء الفرد دالة خصائصه
+3. العلاقة ما بين الأداة والخاصية تختلف من فرد لآخر
+4. الدرجة التي يحصل عليها الفرد فيها درجة حقيقية ودرجة خطأ
+[[equation]]
+# مراحل عملية القياس
+1. تحديد حجم وأبعاد الظاهرة (دلالات إكلينيكية)
+2. تحديد البنود (الأسئلة)
+3. تطبيق الأداة (الأدوات المستخدمة)
+4. تحليل الاستجابات (النتائج)`;
+const GEN_BODY = `# معلومات عامة
+- أول رئيس جمهورية لمصر: محمد نجيب (أُعلنت الجمهورية سنة 1953).
+- مؤسس مصر الحديثة: محمد علي باشا، حكم من 1805 لـ 1848 وأسّس الأسرة العلوية.
+- أكبر جزيرة في العالم: جرينلاند.
+- أكبر دولة مساحةً: روسيا.
+- أصغر دولة: الفاتيكان.
+- عاصمة اليابان: طوكيو.
+- أكبر محيط: المحيط الهادي.`;
+const Q = (q,options,answer,source) => ({id:uid(),q,options,answer,source});
+const SEED = {
+  staff:[
+    {code:'010',name:'عثمان',role:'director',active:true,subjects:[]},
+    {code:'012',name:'علي',role:'deputy',active:true,subjects:['stat','gen']},
+    {code:'011',name:'عمر',role:'assistant',active:true,subjects:['stat','gen']}
+  ],
+  students:[{code:'00',name:'خالد',active:true,by:'النظام',ts:0}],
+  subjects:[
+    {id:'stat',name:'علم النفس الإحصائي',icon:'📊',color:'#2b8a98'},
+    {id:'gen',name:'ثقافة عامة (تجريبي)',icon:'🌍',color:'#6f9f7a'}
+  ],
+  lectures:[
+    {id:'stat-1',subject:'stat',num:1,title:'القياس النفسي والإحصاء',minutes:6,body:STAT_BODY},
+    {id:'gen-1',subject:'gen',num:1,title:'معلومات عامة',minutes:4,body:GEN_BODY}
+  ],
+  questions:{
+    'stat-1':[
+      Q('الإحصاء الوصفي معناه:',['وصف البيانات','التنبؤ بالنتائج وفق النظريات','ترتيب الأفراد في ظاهرة معينة','قياس الطول والوزن'],0,'إحصاء وصفي: وصف البيانات، ويساعد في تحليل البيانات.'),
+      Q('أي نوع من الإحصاء بيحلل البيانات وفق النظريات بالتنبؤات والنتائج؟',['الإحصاء الاستدلالي','الإحصاء الوصفي','القياس المباشر','القياس النسبي'],0,'إحصاء استدلالي: تحليل البيانات وفق النظريات بالتنبؤات والنتائج.'),
+      Q('مستويات القياس النفسي عددها:',['ثلاثة','أربعة','خمسة','اثنين'],1,'الاسمي، الرتبي، الفتري، النسبي.'),
+      Q('أي مستوى من مستويات القياس مكتوب جنبه (علوم طبيعية)؟',['النسبي','الاسمي','الرتبي','الفتري'],0,'النسبي (علوم طبيعية).'),
+      Q('قياس الطول والوزن بيتحسب:',['قياس مباشر','قياس غير مباشر','مستوى اسمي','إحصاء استدلالي'],0,'قياس مباشر: طول / وزن (علوم طبيعية).'),
+      Q('القياس غير المباشر معناه:',['استدلال على الصفة من خلال مجموعة صفات ودلالات','قياس الطول والوزن','وصف البيانات فقط','ترتيب الأفراد فقط'],0,'قياس غير مباشر: استدلال صفة من خلال مجموعة صفات ودلالات (علوم إنسانية).'),
+      Q('صح ولا غلط: القياس غير المباشر بيستخدم في العلوم الإنسانية.',['صح','غلط'],0,'قياس غير مباشر (علوم إنسانية).'),
+      Q('الدرجة اللي يحصل عليها الفرد فيها:',['درجة حقيقية ودرجة خطأ','درجة حقيقية فقط','درجة خطأ فقط','درجة ترتيبية'],0,'الدرجة التي يحصل عليها: درجة حقيقية ودرجة خطأ.'),
+      Q('أول مرحلة من مراحل عملية القياس:',['تحديد حجم وأبعاد الظاهرة','تطبيق الأداة','تحليل الاستجابات','تحديد البنود'],0,'المرحلة الأولى: تحديد حجم وأبعاد الظاهرة.'),
+      Q('تحليل الاستجابات (النتائج) هي المرحلة رقم:',['الرابعة','الأولى','الثانية','الثالثة'],0,'المرحلة الرابعة: تحليل الاستجابات (النتائج).'),
+      Q('تحديد البنود معناه تحديد:',['الأسئلة','النتائج','الأدوات المستخدمة','الدلالات الإكلينيكية'],0,'المرحلة الثانية: تحديد البنود (الأسئلة).')
+    ],
+    'gen-1':[
+      Q('مين أول رئيس جمهورية لمصر؟',['محمد نجيب','جمال عبد الناصر','أنور السادات','حسني مبارك'],0,'أُعلنت الجمهورية سنة 1953 وكان محمد نجيب أول رئيس.'),
+      Q('مين يُعتبر مؤسس مصر الحديثة؟',['الخديوي إسماعيل','محمد علي باشا','سعد زغلول','مصطفى كامل'],1,'محمد علي باشا حكم مصر من 1805 لـ 1848.'),
+      Q('إيه أكبر جزيرة في العالم؟',['مدغشقر','بورنيو','جرينلاند','سومطرة'],2,'جرينلاند أكبر جزيرة في العالم.'),
+      Q('إيه أكبر دولة في العالم مساحةً؟',['الصين','كندا','الولايات المتحدة','روسيا'],3,'روسيا أكبر دولة مساحةً.'),
+      Q('إيه أصغر دولة في العالم؟',['الفاتيكان','موناكو','سان مارينو','ليختنشتاين'],0,'الفاتيكان أصغر دولة في العالم.'),
+      Q('إيه عاصمة اليابان؟',['أوساكا','كيوتو','سول','طوكيو'],3,'طوكيو عاصمة اليابان.'),
+      Q('إيه أكبر محيط في العالم؟',['الأطلسي','الهادي','الهندي','المتجمد الشمالي'],1,'المحيط الهادي أكبر المحيطات.'),
+      Q('محمد علي باشا أسّس الأسرة:',['العلوية','الفاطمية','الأيوبية','المملوكية'],0,'أسّس محمد علي الأسرة العلوية.'),
+      Q('صح ولا غلط: روسيا أكبر دولة في العالم مساحةً.',['صح','غلط'],0,'روسيا أكبر دولة مساحةً.'),
+      Q('صح ولا غلط: الفاتيكان أكبر دولة في العالم.',['صح','غلط'],1,'الفاتيكان أصغر دولة، مش أكبر.')
+    ]
+  },
+  attempts:[], log:[]
+};
+/* ============ shared online storage (Firebase Realtime Database via REST) ============ */
+const FB_URL = 'https://mansafahm1-default-rtdb.firebaseio.com';
+const ROOT = '/fahim';
+const JSON_KEYS = ['staff','students','subjects','lectures','questions','subjectsOrder','log'];
+let DB = JSON.parse(JSON.stringify(SEED));
+let LAST = {};            // آخر نسخة معروفة من السيرفر (نص JSON لكل جزء)
+let LAST_ATT = {};        // المحاولات المتسجلة عندنا (id -> true)
+let syncing = 0;
+
+async function fbGet(path){
+  const r = await fetch(FB_URL+ROOT+path+'.json', {cache:'no-store'});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function fbPut(path, val){
+  const r = await fetch(FB_URL+ROOT+path+'.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(val)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+}
+function dbFromRemote(raw){
+  const d = {};
+  for(const k of ['staff','students','subjects','lectures','log']){
+    d[k] = raw && typeof raw[k]==='string' ? JSON.parse(raw[k]) : JSON.parse(JSON.stringify(SEED[k]));
+  }
+  d.questions = raw && typeof raw.questions==='string' ? JSON.parse(raw.questions) : JSON.parse(JSON.stringify(SEED.questions));
+  const att = raw && raw.attempts ? Object.values(raw.attempts) : [];
+  d.attempts = att.sort((a,b)=>a.ts-b.ts).slice(-600);
+  return d;
+}
+function rememberRemote(raw){
+  LAST = {};
+  for(const k of ['staff','students','subjects','lectures','questions','log']){
+    LAST[k] = raw && typeof raw[k]==='string' ? raw[k] : null;
+  }
+  LAST_ATT = {};
+  if(raw && raw.attempts) for(const id in raw.attempts) LAST_ATT[id]=true;
+}
+async function pushAll(){
+  const jobs=[];
+  for(const k of ['staff','students','subjects','lectures','questions','log']){
+    const str = JSON.stringify(DB[k]);
+    jobs.push(fbPut('/'+k, str).then(()=>{LAST[k]=str;}));
+  }
+  await Promise.all(jobs);
+}
+function saveDB(){
+  // بنكتب بس الأجزاء اللي اتغيرت، والمحاولات الجديدة كل واحدة لوحدها (عشان ما نمسحش شغل حد تاني)
+  syncing++;
+  const jobs=[];
+  for(const k of ['staff','students','subjects','lectures','questions','log']){
+    const str = JSON.stringify(DB[k]);
+    if(str!==LAST[k]){ LAST[k]=str; jobs.push(fbPut('/'+k, str)); }
+  }
+  for(const a of DB.attempts){
+    if(!LAST_ATT[a.id]){ LAST_ATT[a.id]=true; jobs.push(fbPut('/attempts/'+a.id, a)); }
+  }
+  Promise.all(jobs).catch(()=>toast('مفيش نت، التغيير ما اتحفظش')).finally(()=>{syncing--;});
+}
+async function boot(){
+  const app=$('app'); app.replaceChildren(el('div',{class:'card',style:'text-align:center;margin:40px 16px'},'جاري التحميل...'));
+  try{
+    let raw = await fbGet('');
+    if(!raw){ DB = JSON.parse(JSON.stringify(SEED)); await pushAll(); raw = await fbGet(''); }
+    rememberRemote(raw); DB = dbFromRemote(raw);
+    render();
+    setInterval(poll, 4000);
+  }catch(e){
+    app.replaceChildren(el('div',{class:'card',style:'text-align:center;margin:40px 16px'},
+      el('p',null,'مش قادر أوصل للقاعدة. اتأكد من النت ومن قواعد Realtime Database (test mode).'),
+      el('p',{style:'direction:ltr;font-size:13px;color:var(--muted)'},String(e.message||e)),
+      el('button',{class:'ghost',on:{click:boot}},'إعادة المحاولة')));
+  }
+}
+async function poll(){
+  if(syncing||document.hidden) return;
+  try{
+    const raw = await fbGet('');
+    if(!raw) return;
+    let changed=false;
+    for(const k of ['staff','students','subjects','lectures','questions','log']){
+      if(typeof raw[k]==='string' && raw[k]!==LAST[k]) changed=true;
+    }
+    const ids = raw.attempts ? Object.keys(raw.attempts) : [];
+    if(ids.some(id=>!LAST_ATT[id])) changed=true;
+    if(!changed) return;
+    rememberRemote(raw); DB = dbFromRemote(raw);
+    // ما نعيدش الرسم وقت الامتحان أو وانت بتكتب
+    const ae=document.activeElement;
+    const typing = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+    if(S.view==='exam'||typing||document.querySelector('dialog[open]')) return;
+    render(false);
+  }catch(e){}
+}
+async function resetAll(){
+  DB = JSON.parse(JSON.stringify(SEED));
+  try{ await fbPut('/attempts', null); await pushAll(); }catch(e){ toast('فشل مسح البيانات'); }
+  LAST_ATT={};
+}
+function logAct(me,text){ DB.log.unshift({ts:Date.now(),who:me.name,role:me.role,text}); DB.log=DB.log.slice(0,150); }
+
+/* ============ roles & permissions (checked on every action) ============ */
+const ROLES = {
+  director:{label:'المدير',tabs:['students','questions','lectures','monitor','team','log']},
+  deputy:{label:'النائب',tabs:['students','questions']},
+  assistant:{label:'مساعد',tabs:['lectures']}
+};
+const TABS = {students:'أكواد الطلبة',questions:'الأسئلة',lectures:'المحاضرات',monitor:'متابعة الطلبة',team:'الفريق والمواد',log:'السجل'};
+const PERMS = {createStudent:['director','deputy'],toggleStudent:['director'],editQuestions:['director','deputy'],editLectures:['director','assistant'],viewMonitor:['director'],manageTeam:['director'],viewLog:['director']};
+const can = (me,p) => me && me.active && PERMS[p].includes(me.role);
+const allowed = (me,subj) => me.role==='director' || (me.subjects||[]).includes(subj);
+const scoped = me => DB.subjects.filter(s=>allowed(me,s.id));
+
+/* ============ state ============ */
+const S = {who:null,view:'home',kind:'student',subj:null,lec:null,tab:null,fails:0,lock:0,newCode:null,qSubj:null,qLec:null,lSubj:null,lNum:1};
+let E = null, R = null;
+
+function render(top){
+  const app=$('app'); app.replaceChildren();
+  let nodes;
+  if(!S.who) nodes = loginView();
+  else if(S.who.type==='student') nodes = studentView();
+  else nodes = staffShell();
+  app.append(...[].concat(nodes));
+  if(top!==false) window.scrollTo(0,0);
+}
+function logout(){ if(E){clearInterval(E.tick);E=null;} S.who=null; S.view='home'; S.newCode=null; render(); }
+function topbar(name,roleLabel,noOut){
+  return el('header',{class:'top'},
+    el('div',{class:'brand'},'📘 فاهم'),
+    el('div',{class:'who'},el('span',{class:'wn'},name),roleLabel?el('span',{class:'chip'},roleLabel):null),
+    noOut?null:el('button',{class:'ghost sm',on:{click:logout}},'خروج'));
+}
+const sel = (opts,val,fn) => { const s=el('select',{class:'inp'},opts.map(([v,t])=>el('option',{value:v},t))); s.value=val; s.addEventListener('change',()=>fn(s.value)); return s; };
+
+/* ============ login ============ */
+function loginView(){
+  const inp = el('input',{class:'inp big',type:'text',autocomplete:'off',autocapitalize:'characters',spellcheck:'false',placeholder:'اكتب الكود','aria-label':'الكود'});
+  const err = el('div',{class:'err',role:'alert'});
+  const go = () => {
+    if(Date.now()<S.lock){ err.textContent='محاولات غلط كتير. استنى '+AR(Math.ceil((S.lock-Date.now())/1000))+' ثانية.'; return; }
+    const c = norm(inp.value);
+    if(!c){ err.textContent='اكتب الكود الأول.'; return; }
+    const list = S.kind==='student' ? DB.students : DB.staff;
+    const found = list.find(x=>x.code===c);
+    if(found && found.active){ S.fails=0; S.who={type:S.kind==='student'?'student':'staff',code:c}; S.view='home'; S.tab=null; S.newCode=null; render(); return; }
+    if(found){ err.textContent='الكود ده موقوف. كلّم المدير.'; return; }
+    S.fails++;
+    if(S.fails>=5){ S.lock=Date.now()+30000; S.fails=0; err.textContent='اتقفل الدخول 30 ثانية بعد محاولات غلط كتير.'; }
+    else err.textContent='الكود غير صحيح. باقي '+AR(5-S.fails)+' محاولات.';
+  };
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+  const seg = el('div',{class:'seg'},
+    el('button',{class:S.kind==='student'?'on':'',on:{click:()=>{S.kind='student';render(false);}}},'دخول الطلبة'),
+    el('button',{class:S.kind==='staff'?'on':'',on:{click:()=>{S.kind='staff';render(false);}}},'دخول الإدارة'));
+  return el('div',{class:'login'},
+    el('div',{class:'logo'},'📘'),
+    el('h1',{style:'text-align:center'},'فاهم'),
+    el('p',{style:'text-align:center;margin-bottom:22px'},'ملخصات المحاضرات وامتحاناتها في مكان واحد'),
+    el('div',{class:'card'},seg,
+      el('label',{class:'lb'},S.kind==='student'?'كود الطالب':'كود الإدارة'),inp,err,
+      el('button',{class:'primary block',on:{click:go}},'دخول')));
+}
+
+/* ============ lecture renderer + visuals ============ */
+function vcard(icon,title,l1,l2,cls){ return el('div',{class:'vcard '+cls},el('div',{class:'vicon'},icon),el('b',null,title),el('span',null,l1),l2?el('span',null,l2):null); }
+const VIS = {
+  split:()=>el('div',{class:'v-split'},vcard('📊','إحصاء وصفي','وصف البيانات','يساعد في تحليل البيانات','c1'),vcard('🔮','إحصاء استدلالي','تحليل البيانات وفق النظريات','بالتنبؤات والنتائج','c2')),
+  ladder:()=>el('div',{class:'ladder'},[['١','الاسمي',''],['٢','الرتبي',''],['٣','الفتري','فيه تساوي'],['٤','النسبي','علوم طبيعية']].map((it,i)=>
+    el('div',{class:'step s'+(i+1),style:'height:'+(84+i*36)+'px'},el('em',null,it[0]),el('b',null,it[1]),it[2]?el('span',null,it[2]):null))),
+  direct:()=>el('div',{class:'v-split'},vcard('📏','قياس مباشر','طول / وزن','(علوم طبيعية)','c3'),vcard('🧩','قياس غير مباشر','استدلال صفة من خلال مجموعة صفات ودلالات','(علوم إنسانية)','c4')),
+  equation:()=>el('div',{class:'eq'},el('span',{class:'chip main'},'الدرجة التي يحصل عليها'),el('div',{class:'two'},el('span',{class:'chip real'},'درجة حقيقية'),el('span',{class:'chip err2'},'درجة خطأ')))
+};
+function stepsBlock(items){ return el('div',{class:'steps'},items.map((t,i)=>el('div',{class:'st'},el('div',{class:'dot'},AR(i+1)),el('div',{class:'tx'},t)))); }
+function renderBody(text){
+  const root = el('div',{class:'lec'}); let steps=null, list=null;
+  const flush = () => { if(steps){root.append(stepsBlock(steps));steps=null;} if(list){root.append(el('ul',null,list.map(t=>el('li',null,t))));list=null;} };
+  for(const raw of String(text).split('\n')){
+    const t = raw.trim(); let m;
+    if(!t){ flush(); continue; }
+    if((m=t.match(/^[0-9٠-٩]+[.\-)]\s*(.+)$/))){ if(list){flush();} (steps=steps||[]).push(m[1]); continue; }
+    if(t.startsWith('- ')){ if(steps){flush();} (list=list||[]).push(t.slice(2)); continue; }
+    flush();
+    if(t.startsWith('# ')) root.append(el('h3',{class:'lh'},t.slice(2)));
+    else if((m=t.match(/^\[\[(\w+)\]\]$/))){ if(VIS[m[1]]) root.append(VIS[m[1]]()); }
+    else root.append(el('p',null,t));
+  }
+  flush(); return root;
+}
+
+/* ============ student ============ */
+const lastAttempt = (code,lec) => DB.attempts.filter(a=>a.code===code&&a.lec===lec).slice(-1)[0];
+const subjOf = id => DB.subjects.find(s=>s.id===id);
+function studentView(){
+  const me = DB.students.find(s=>s.code===S.who.code);
+  if(!me || !me.active){ S.who=null; return loginView(); }
+  if(S.view==='exam') return examView();
+  const top = topbar(me.name,null);
+  if(S.view==='result') return [top,resultView()];
+  if(S.view==='lecture') return [top,lectureView(me)];
+  if(S.view==='subject') return [top,subjectView(me)];
+  return [top,homeView(me)];
+}
+function homeView(me){
+  return el('main',{class:'page'},
+    el('div',{class:'hello'},el('h1',null,'أهلاً يا '+me.name),p('اختار المادة وكمّل مذاكرتك.')),
+    el('div',{class:'grid'},DB.subjects.map(sub=>{
+      const lecs = DB.lectures.filter(l=>l.subject===sub.id);
+      const done = lecs.filter(l=>lastAttempt(me.code,l.id)).length;
+      return el('button',{class:'scard',style:'--c:'+sub.color,on:{click:()=>{S.subj=sub.id;S.view='subject';render();}}},
+        el('div',{class:'sicon'},sub.icon),
+        el('div',{class:'stext'},el('b',null,sub.name),el('span',null,AR(lecs.length)+' محاضرة'+(lecs.length?'، اتمتحنت في '+AR(done):''))));
+    })));
+}
+const p = t => el('p',null,t);
+function subjectView(me){
+  const sub = subjOf(S.subj);
+  const lecs = DB.lectures.filter(l=>l.subject===sub.id).sort((a,b)=>a.num-b.num);
+  const max = Math.max(7,...lecs.map(l=>l.num));
+  const rows = [];
+  for(let n=1;n<=max;n++){
+    const l = lecs.find(x=>x.num===n);
+    if(!l){ rows.push(el('div',{class:'lrow lock'},el('div',{class:'num'},AR(n)),el('div',{class:'t'},'محاضرة '+AR(n),el('span',null,'لسه ما اتضافتش')),'🔒')); continue; }
+    const la = lastAttempt(me.code,l.id);
+    rows.push(el('button',{class:'lrow',on:{click:()=>{S.lec=l.id;S.view='lecture';render();}}},
+      el('div',{class:'num'},AR(n)),
+      el('div',{class:'t'},l.title,el('span',null,la?'آخر نتيجة: '+AR(la.score)+' من '+AR(la.total):'لسه ما اتمتحنتش')),
+      la?el('span',{class:'chip '+(la.score/la.total>=.6?'ok':'bad')},AR(Math.round(la.score/la.total*100))+'٪'):null));
+  }
+  return el('main',{class:'page'},
+    el('button',{class:'back',on:{click:()=>{S.view='home';render();}}},'رجوع للمواد'),
+    el('div',{class:'banner',style:'--c:'+sub.color},el('div',{class:'sicon'},sub.icon),el('div',null,el('h2',{style:'margin:0'},sub.name),p('اختار المحاضرة'))),
+    rows);
+}
+function lectureView(me){
+  const l = DB.lectures.find(x=>x.id===S.lec), sub = subjOf(l.subject);
+  const qn = (DB.questions[l.id]||[]).length, la = lastAttempt(me.code,l.id);
+  return el('main',{class:'page'},
+    el('button',{class:'back',on:{click:()=>{S.view='subject';render();}}},'رجوع للمحاضرات'),
+    el('div',{class:'banner',style:'--c:'+sub.color},el('div',{class:'sicon'},sub.icon),el('div',null,el('h2',{style:'margin:0'},'محاضرة '+AR(l.num)+': '+l.title),p(sub.name))),
+    renderBody(l.body),
+    el('div',{class:'cta'},el('div',null,
+      la?el('span',{class:'chip '+(la.score/la.total>=.6?'ok':'bad')},'آخر نتيجة '+AR(la.score)+'/'+AR(la.total)):null,
+      el('button',{class:'primary',disabled:!qn,on:{click:()=>startExam(l.id)}},qn?'ابدأ الامتحان ('+AR(qn)+' سؤال، '+AR(l.minutes||4)+' دقيقة)':'الامتحان لسه ما اتضافش'))));
+}
+
+/* ============ exam ============ */
+function startExam(lecId,redo){
+  const lec = DB.lectures.find(l=>l.id===lecId);
+  const src = redo || DB.questions[lecId] || [];
+  if(!src.length) return;
+  if(E) clearInterval(E.tick);
+  const qs = shuffle(src).map(q=>{ const t=q.options[q.answer]; const o=q.options.length===2?q.options.slice():shuffle(q.options); return {...q,options:o,answer:o.indexOf(t)}; });
+  const mins = redo ? Math.max(1,Math.ceil(qs.length*.5)) : (lec.minutes||4);
+  E = {lecId,qs,answers:Array(qs.length).fill(null),flags:Array(qs.length).fill(false),cur:0,total:mins*60,left:mins*60,started:Date.now(),submitted:false,practice:!!redo,tick:null};
+  S.view='exam'; render();
+  E.tick = setInterval(()=>{ E.left--; updClock(); if(E.left<=0) finishExam(); },1000);
+}
+function examView(){ const root=el('main',{class:'page',id:'examroot'}); setTimeout(fillExam,0); return root; }
+function updClock(){
+  if(!E) return; const c=$('clock'); if(!c) return;
+  const low=E.left<=60;
+  c.textContent=fmt(Math.max(E.left,0)); c.classList.toggle('low',low);
+  const f=$('fill'); f.classList.toggle('low',low); f.style.transform='scaleX('+Math.max(E.left,0)/E.total+')';
+  $('warn').textContent = low&&E.left>0 ? 'باقي أقل من دقيقة' : '';
+}
+function fillExam(){
+  const root=$('examroot'); if(!root||!E) return;
+  const q=E.qs[E.cur], last=E.cur===E.qs.length-1;
+  const bar = el('div',{class:'ebar'},
+    el('div',{class:'erow'},el('span',null,'سؤال '+AR(E.cur+1)+' من '+AR(E.qs.length)),el('span',{class:'clock',id:'clock'})),
+    el('div',{class:'track'},el('div',{class:'fill',id:'fill'})),el('div',{class:'warn',id:'warn'}));
+  const card = el('div',{class:'card',style:'margin-top:14px'},
+    el('div',{class:'qhead'},el('span',null,'أجبت على '+AR(E.answers.filter(a=>a!==null).length)+' من '+AR(E.qs.length)),
+      el('button',{class:'flagbtn'+(E.flags[E.cur]?' on':''),on:{click:()=>{E.flags[E.cur]=!E.flags[E.cur];fillExam();}}},E.flags[E.cur]?'معلّم للمراجعة':'علّم للمراجعة')),
+    el('h2',null,q.q),
+    q.options.map((t,i)=>el('button',{class:'opt'+(E.answers[E.cur]===i?' sel':''),on:{click:()=>{E.answers[E.cur]=E.answers[E.cur]===i?null:i;fillExam();}}},el('i',null,LET[i]),el('span',null,t))));
+  const nav = el('div',{class:'nav'},
+    el('button',{class:'ghost',disabled:E.cur===0,on:{click:()=>{E.cur--;fillExam();}}},'السابق'),
+    last?el('button',{class:'primary grow',on:{click:askSubmit}},'سلّم الامتحان')
+        :el('button',{class:'primary grow',on:{click:()=>{E.cur++;fillExam();}}},'التالي'));
+  const pal = el('div',{class:'palette'},E.qs.map((_,i)=>el('button',{class:'cell'+(E.answers[i]!==null?' done':'')+(E.flags[i]?' flag':'')+(i===E.cur?' cur':''),'aria-label':'سؤال '+(i+1),on:{click:()=>{E.cur=i;fillExam();}}},AR(i+1))));
+  root.replaceChildren(bar,card,nav,pal,el('div',{class:'legend'},'الدايرة الملوّنة = اتجاوب، والنقطة = معلّم للمراجعة'));
+  updClock();
+}
+function askSubmit(){
+  const un=E.answers.filter(a=>a===null).length, fl=E.flags.filter(Boolean).length;
+  const row=(k,v)=>el('div',{class:'sumrow'},el('span',null,k),el('b',null,v));
+  const dlg = el('dialog',null,el('h2',null,'تسلّم الامتحان؟'),
+    row('أسئلة اتجاوبت',AR(E.qs.length-un)),row('من غير إجابة',AR(un)),row('معلّمة للمراجعة',AR(fl)),row('الوقت المتبقي',fmt(E.left)),
+    el('div',{class:'dlg-actions'},el('button',{class:'ghost',on:{click:()=>dlg.close()}},'ارجع للامتحان'),el('button',{class:'primary',on:{click:()=>{dlg.close();finishExam();}}},'أيوه، سلّم')));
+  dlg.addEventListener('close',()=>dlg.remove());
+  document.body.append(dlg); dlg.showModal();
+}
+function finishExam(){
+  if(!E||E.submitted) return; E.submitted=true; clearInterval(E.tick);
+  document.querySelectorAll('dialog[open]').forEach(d=>d.close());
+  const lec=DB.lectures.find(l=>l.id===E.lecId);
+  const used=Math.min(E.total,Math.round((Date.now()-E.started)/1000));
+  let ok=0,no=0,sk=0;
+  const rows=E.qs.map((q,i)=>{ const st=E.answers[i]===null?'sk':E.answers[i]===q.answer?'ok':'no'; if(st==='ok')ok++; else if(st==='no')no++; else sk++; return {q,mine:E.answers[i],st}; });
+  const pct=Math.round(ok/E.qs.length*100);
+  if(!E.practice){ DB.attempts.push({id:uid(),code:S.who.code,lec:E.lecId,subj:lec.subject,score:ok,total:E.qs.length,secs:used,ts:Date.now()}); DB.attempts=DB.attempts.slice(-600); saveDB(); }
+  R={lecId:E.lecId,rows,ok,no,sk,pct,used,timedOut:E.left<=0,practice:E.practice,filter:'all'};
+  S.view='result'; E=null; render();
+}
+function resultView(){
+  const r=R, C=2*Math.PI*52;
+  const ring=el('div',{class:'ring'}); ring.innerHTML='<svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg '+(r.pct>=75?'':r.pct>=50?'mid':'lo')+'" id="rfg" cx="60" cy="60" r="52"/></svg>';
+  ring.append(el('b',null,AR(r.pct)+'٪'));
+  const fg=ring.querySelector('#rfg'); fg.style.strokeDasharray=C; fg.style.strokeDashoffset=C;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ fg.style.strokeDashoffset=C*(1-r.pct/100); }));
+  const list=el('div');
+  const draw=()=>{
+    tabs.replaceChildren(...[['all','الكل',r.rows.length],['no','الغلط',r.no],['sk','من غير إجابة',r.sk]].filter(t=>t[0]==='all'||t[2]).map(([k,t,n])=>
+      el('button',{class:'tab'+(r.filter===k?' on':''),on:{click:()=>{r.filter=k;draw();}}},t+' ('+AR(n)+')')));
+    list.replaceChildren(...r.rows.map((x,i)=>{
+      if(r.filter!=='all'&&x.st!==r.filter) return null;
+      const right=el('div',{class:'ans right'},(x.st==='ok'?'إجابتك صح: ':'الإجابة الصح: ')+x.q.options[x.q.answer]);
+      return el('div',{class:'rev '+x.st},el('b',null,AR(i+1)+'. '+x.q.q),
+        x.st==='ok'?right:[el('div',{class:'ans wrong'},x.mine===null?'سبتها من غير إجابة':'إجابتك: '+x.q.options[x.mine]),right],
+        x.q.source?el('small',null,'من المحاضرة: '+x.q.source):null);
+    }).filter(Boolean));
+  };
+  const tabs=el('div',{class:'tabs'});
+  const wrong=r.rows.filter(x=>x.st!=='ok').map(x=>x.q);
+  const out=el('main',{class:'page'},
+    el('h1',null,'نتيجتك'),
+    el('div',{class:'card'},el('div',{class:'hero'},ring,el('div',null,
+      el('div',{class:'grade'},r.pct>=90?'ممتاز':r.pct>=75?'جيد جداً':r.pct>=60?'جيد':r.pct>=50?'مقبول':'محتاج مراجعة'),
+      p(r.pct>=85?'المحاضرة ثابتة عندك.':r.pct>=60?'كويس، راجع الأسئلة الغلط تحت.':'ارجع للمحاضرة وبعدين أعد الامتحان.'),
+      p((r.timedOut?'الوقت خلص. ':'')+'الوقت المستخدم: '+fmt(r.used)+(r.practice?' (تدريب، مش بيتسجل)':'')))),
+      el('div',{class:'stats'},el('div',{class:'stat ok'},el('b',null,AR(r.ok)),'صح'),el('div',{class:'stat no'},el('b',null,AR(r.no)),'غلط'),el('div',{class:'stat sk'},el('b',null,AR(r.sk)),'من غير إجابة'))),
+    el('h3',null,'مراجعة الإجابات'),tabs,list,
+    el('div',{class:'nav'},
+      el('button',{class:'ghost grow',on:{click:()=>{S.view='lecture';S.lec=r.lecId;render();}}},'رجوع للمحاضرة'),
+      wrong.length?el('button',{class:'ghost grow',on:{click:()=>startExam(r.lecId,wrong)}},'أعد الأسئلة الغلط بس'):null,
+      el('button',{class:'primary grow',on:{click:()=>startExam(r.lecId)}},'أعد الامتحان')));
+  draw(); return out;
+}
+
+/* ============ staff ============ */
+function staffShell(){
+  const me=DB.staff.find(s=>s.code===S.who.code);
+  if(!me||!me.active){ S.who=null; return loginView(); }
+  const tabs=ROLES[me.role].tabs;
+  if(!tabs.includes(S.tab)) S.tab=tabs[0];
+  const fn={students:tabStudents,questions:tabQuestions,lectures:tabLectures,monitor:tabMonitor,team:tabTeam,log:tabLog}[S.tab];
+  return [topbar(me.name,ROLES[me.role].label),
+    el('main',{class:'page'},
+      el('div',{class:'tabs2'},tabs.map(t=>el('button',{class:'tab'+(S.tab===t?' on':''),on:{click:()=>{S.tab=t;S.newCode=null;render(false);}}},TABS[t]))),
+      fn(me))];
+}
+const deny = () => el('div',{class:'note bad'},'مش مسموح ليك بالجزء ده.');
+const empty = t => el('div',{class:'note'},t);
+const codeBox = () => S.newCode ? el('div',{class:'newcode'},el('div',null,S.newCode.label),el('span',{class:'code'},S.newCode.code),el('button',{class:'ghost sm',on:{click:()=>copy(S.newCode.code)}},'نسخ')) : null;
+
+function tabStudents(me){
+  const nameIn=el('input',{class:'inp',placeholder:'اسم الطالب',maxlength:60,'aria-label':'اسم الطالب'});
+  const add=()=>{
+    if(!can(me,'createStudent')) return toast('مش مسموح');
+    const n=nameIn.value.trim(); if(n.length<2) return toast('اكتب اسم الطالب');
+    const code=uniqueCode(); DB.students.push({code,name:n,active:true,by:me.name,ts:Date.now()});
+    logAct(me,'أنشأ كود للطالب '+n); saveDB(); S.newCode={code,label:'كود '+n+':'}; render(false);
+  };
+  const list=DB.students.slice().sort((a,b)=>b.ts-a.ts);
+  return el('div',null,
+    el('div',{class:'card'},el('h3',null,'إنشاء كود طالب'),nameIn,el('button',{class:'primary block',on:{click:add}},'إنشاء الكود'),
+      p('الكود بيتولّد عشوائي من السيستم، مش من الاسم.')),
+    codeBox(),
+    el('div',{class:'card'},el('h3',null,'الطلبة ('+AR(list.length)+')'),
+      list.map(s=>el('div',{class:'row'},el('div',{class:'grow'},el('b',null,s.name),el('div',{style:'font-size:14px;color:var(--muted)'},s.by?'أضافه: '+s.by:'')),
+        el('span',{class:'code'},s.code),
+        can(me,'toggleStudent')?el('button',{class:'ghost sm'+(s.active?' danger':''),on:{click:()=>{if(!can(me,'toggleStudent'))return;s.active=!s.active;logAct(me,(s.active?'فعّل':'أوقف')+' كود '+s.name);saveDB();render(false);}}},s.active?'إيقاف':'تفعيل')
+          :(s.active?null:el('span',{class:'chip bad'},'موقوف'))))));
+}
+
+function tabQuestions(me){
+  if(!can(me,'editQuestions')) return deny();
+  const subs=scoped(me); if(!subs.length) return empty('مفيش مواد متاحة ليك. كلّم المدير.');
+  if(!subs.find(s=>s.id===S.qSubj)) S.qSubj=subs[0].id;
+  const lecs=DB.lectures.filter(l=>l.subject===S.qSubj).sort((a,b)=>a.num-b.num);
+  if(!lecs.find(l=>l.id===S.qLec)) S.qLec=lecs[0]?lecs[0].id:null;
+  const top=el('div',{class:'card'},
+    el('label',{class:'lb'},'المادة'),sel(subs.map(s=>[s.id,s.name]),S.qSubj,v=>{S.qSubj=v;S.qLec=null;render(false);}),
+    lecs.length?[el('label',{class:'lb'},'المحاضرة'),sel(lecs.map(l=>[l.id,'محاضرة '+AR(l.num)+': '+l.title]),S.qLec,v=>{S.qLec=v;render(false);})]:null);
+  if(!S.qLec) return el('div',null,top,empty('مفيش محاضرات في المادة دي لسه. المساعد أو المدير يضيفها الأول.'));
+  const qs=DB.questions[S.qLec]||[];
+  const qIn=el('textarea',{class:'inp',placeholder:'نص السؤال',rows:2});
+  const oIns=[0,1,2,3].map(i=>el('input',{class:'inp',placeholder:'الاختيار '+LET[i]+(i>1?' (اختياري)':'')}));
+  const radios=[0,1,2,3].map(i=>el('input',{type:'radio',name:'ans','aria-label':'الإجابة الصح '+LET[i]}));
+  const srcIn=el('input',{class:'inp',placeholder:'السطر اللي طلع منه السؤال من المحاضرة (اختياري)'});
+  const add=()=>{
+    if(!can(me,'editQuestions')||!allowed(me,S.qSubj)) return toast('مش مسموح');
+    const q=qIn.value.trim(); const opts=[]; let ans=-1;
+    oIns.forEach((o,i)=>{ const t=o.value.trim(); if(t){ if(radios[i].checked) ans=opts.length; opts.push(t); } });
+    if(q.length<3) return toast('اكتب السؤال');
+    if(opts.length<2) return toast('اكتب اختيارين على الأقل');
+    if(new Set(opts).size!==opts.length) return toast('الاختيارات لازم تختلف عن بعض');
+    if(ans<0) return toast('حدد الإجابة الصح');
+    (DB.questions[S.qLec]=DB.questions[S.qLec]||[]).push(Q(q,opts,ans,srcIn.value.trim()));
+    logAct(me,'أضاف سؤال في '+S.qLec); saveDB(); toast('اتضاف السؤال'); render(false);
+  };
+  const del=q=>{ if(!confirm('تمسح السؤال ده؟')) return; DB.questions[S.qLec]=qs.filter(x=>x.id!==q.id); logAct(me,'مسح سؤال من '+S.qLec); saveDB(); render(false); };
+  return el('div',null,top,
+    el('div',{class:'card'},el('h3',null,'إضافة سؤال'),qIn,
+      el('div',{class:'opts-grid'},[0,1,2,3].map(i=>[radios[i],oIns[i]])),
+      srcIn,p('علّم الدايرة جنب الإجابة الصح. اترك الاختيارين الأخيرين فاضيين لو سؤال صح وغلط.'),
+      el('button',{class:'primary block',on:{click:add}},'إضافة السؤال')),
+    el('div',{class:'card'},el('h3',null,'أسئلة المحاضرة ('+AR(qs.length)+')'),
+      qs.length?qs.map((q,i)=>el('div',{class:'row'},el('div',{class:'grow'},el('b',null,AR(i+1)+'. '+q.q),
+        q.options.map((o,j)=>el('div',{class:'qopt'+(j===q.answer?' c':'')},LET[j]+') '+o+(j===q.answer?' ✓':'')))),
+        el('button',{class:'ghost sm danger',on:{click:()=>del(q)}},'مسح'))):empty('مفيش أسئلة لسه.')));
+}
+
+function tabLectures(me){
+  if(!can(me,'editLectures')) return deny();
+  const subs=scoped(me); if(!subs.length) return empty('مفيش مواد متاحة ليك. كلّم المدير.');
+  if(!subs.find(s=>s.id===S.lSubj)) S.lSubj=subs[0].id;
+  const nums=[1,2,3,4,5,6,7,8,9,10];
+  const cur=DB.lectures.find(l=>l.id===S.lSubj+'-'+S.lNum);
+  const title=el('input',{class:'inp',placeholder:'عنوان المحاضرة',value:cur?cur.title:''});
+  const mins=el('input',{class:'inp',type:'number',min:1,max:90,value:cur?cur.minutes:5});
+  const body=el('textarea',{class:'inp',rows:14,placeholder:'اكتب المحاضرة هنا'}); body.value=cur?cur.body:'';
+  const pv=el('div');
+  const save=()=>{
+    if(!can(me,'editLectures')||!allowed(me,S.lSubj)) return toast('مش مسموح');
+    const t=title.value.trim(), b=body.value.trim(), m=Math.min(90,Math.max(1,parseInt(mins.value,10)||5));
+    if(t.length<2) return toast('اكتب عنوان المحاضرة'); if(b.length<10) return toast('المحاضرة قصيرة جداً');
+    const id=S.lSubj+'-'+S.lNum; const l=DB.lectures.find(x=>x.id===id);
+    if(l){ l.title=t; l.body=b; l.minutes=m; } else DB.lectures.push({id,subject:S.lSubj,num:S.lNum,title:t,body:b,minutes:m});
+    logAct(me,'حفظ محاضرة '+AR(S.lNum)+' في '+subjOf(S.lSubj).name); saveDB(); toast('اتحفظت المحاضرة'); render(false);
+  };
+  return el('div',null,
+    el('div',{class:'card'},
+      el('label',{class:'lb'},'المادة'),sel(subs.map(s=>[s.id,s.name]),S.lSubj,v=>{S.lSubj=v;render(false);}),
+      el('label',{class:'lb'},'رقم المحاضرة'),sel(nums.map(n=>{const l=DB.lectures.find(x=>x.id===S.lSubj+'-'+n);return [String(n),AR(n)+(l?' - '+l.title:' (جديدة)')];}),String(S.lNum),v=>{S.lNum=+v;render(false);})),
+    el('div',{class:'card'},el('label',{class:'lb'},'العنوان'),title,
+      can(me,'editLectures')?[el('label',{class:'lb'},'مدة الامتحان (دقايق)'),mins]:null,
+      el('label',{class:'lb'},'المحتوى'),body,
+      el('div',{class:'note'},'التنسيق: سطر يبدأ بـ # = عنوان، وبـ - = نقطة، وبـ 1. 2. 3. = خطوات. وممكن تحط رسم جاهز على سطر لوحده: [[split]] [[ladder]] [[direct]] [[equation]]'),
+      el('div',{class:'nav'},
+        el('button',{class:'ghost grow',on:{click:()=>pv.replaceChildren(el('div',{class:'card'},renderBody(body.value)))}},'معاينة'),
+        el('button',{class:'primary grow',on:{click:save}},'حفظ المحاضرة'))),
+    pv);
+}
+
+function levelOf(avg,n){ if(!n) return ['لسه ما بدأش','warn']; return avg>=85?['متفوق','ok']:avg>=60?['جيد','']:['محتاج متابعة','bad']; }
+function tabMonitor(me){
+  if(!can(me,'viewMonitor')) return deny();
+  const real=DB.attempts;
+  const rows=DB.students.map(s=>{ const a=real.filter(x=>x.code===s.code); const avg=a.length?a.reduce((t,x)=>t+x.score/x.total*100,0)/a.length:0; return {s,a,avg:Math.round(avg),last:a.length?a[a.length-1]:null}; });
+  const recent=real.slice(-12).reverse();
+  return el('div',null,
+    el('div',{class:'card'},el('h3',null,'مستوى الطلبة'),
+      rows.length?rows.map(r=>{ const [lv,cl]=levelOf(r.avg,r.a.length); return el('div',{class:'row'},
+        el('div',{class:'grow'},el('b',null,r.s.name),el('div',{style:'font-size:14px;color:var(--muted)'},AR(r.a.length)+' امتحان'+(r.last?'، آخر نشاط '+dt(r.last.ts):''))),
+        el('span',{class:'chip '+cl},lv),
+        r.a.length?el('div',{class:'bar2'},el('i',{class:r.avg<50?'lo':'',style:'width:'+r.avg+'%'})):null,
+        r.a.length?el('span',{style:'font-size:14px'},'المتوسط '+AR(r.avg)+'٪'):null); }):empty('مفيش طلبة.')),
+    el('div',{class:'card'},el('h3',null,'آخر الامتحانات'),
+      recent.length?recent.map(a=>{ const st=DB.students.find(s=>s.code===a.code); const l=DB.lectures.find(x=>x.id===a.lec); const pc=Math.round(a.score/a.total*100);
+        return el('div',{class:'row'},el('div',{class:'grow'},el('b',null,st?st.name:'؟'),el('div',{style:'font-size:14px;color:var(--muted)'},(l?l.title:a.lec)+' - '+dt(a.ts))),el('span',{class:'chip '+(pc>=60?'ok':'bad')},AR(a.score)+'/'+AR(a.total))); }):empty('لسه محدش امتحن.')));
+}
+
+function tabTeam(me){
+  if(!can(me,'manageTeam')) return deny();
+  const nameIn=el('input',{class:'inp',placeholder:'اسم العضو الجديد'});
+  const roleSel=sel([['deputy','نائب (أكواد طلبة وأسئلة)'],['assistant','مساعد (محاضرات فقط)']],'deputy',()=>{});
+  const addStaff=()=>{
+    if(!can(me,'manageTeam')) return; const n=nameIn.value.trim(); if(n.length<2) return toast('اكتب الاسم');
+    const code=uniqueCode(); DB.staff.push({code,name:n,role:roleSel.value,active:true,subjects:[]});
+    logAct(me,'أضاف '+ROLES[roleSel.value].label+' '+n); saveDB(); S.newCode={code,label:'كود '+n+':'}; render(false);
+  };
+  const subIn=el('input',{class:'inp',placeholder:'اسم مادة جديدة'});
+  const addSub=()=>{
+    const n=subIn.value.trim(); if(n.length<2) return toast('اكتب اسم المادة');
+    const ic=['📘','🧠','📗','🧪','📙','🔬'], co=['#2b8a98','#6f9f7a','#8e7fd1','#d19a4a','#c7708a','#5f8fd1'];
+    DB.subjects.push({id:'s'+uid(),name:n,icon:ic[DB.subjects.length%ic.length],color:co[DB.subjects.length%co.length]});
+    logAct(me,'أضاف مادة '+n); saveDB(); render(false);
+  };
+  const staffCards=DB.staff.filter(s=>s.role!=='director').map(s=>el('div',{class:'row',style:'align-items:flex-start'},
+    el('div',{class:'grow'},el('b',null,s.name+' '),el('span',{class:'chip'},ROLES[s.role].label),
+      el('div',{style:'margin:6px 0'},el('span',{class:'code'},s.code),' ',el('button',{class:'ghost sm',on:{click:()=>copy(s.code)}},'نسخ')),
+      el('div',{style:'font-size:14px;color:var(--muted);margin-bottom:4px'},'المواد المسموح بيها:'),
+      el('div',{class:'checks'},DB.subjects.map(sub=>{ const cb=el('input',{type:'checkbox'}); cb.checked=s.subjects.includes(sub.id);
+        cb.addEventListener('change',()=>{ s.subjects=cb.checked?[...new Set([...s.subjects,sub.id])]:s.subjects.filter(x=>x!==sub.id); logAct(me,'عدّل مواد '+s.name); saveDB(); toast('اتحفظ'); });
+        return el('label',null,cb,sub.name); }))),
+    el('button',{class:'ghost sm'+(s.active?' danger':''),on:{click:()=>{s.active=!s.active;logAct(me,(s.active?'فعّل ':'أوقف ')+s.name);saveDB();render(false);}}},s.active?'إيقاف':'تفعيل')));
+  return el('div',null,
+    el('div',{class:'card'},el('h3',null,'النواب والمساعدين'),staffCards.length?staffCards:empty('لسه مفيش.')),
+    el('div',{class:'card'},el('h3',null,'إضافة عضو'),nameIn,roleSel,el('button',{class:'primary block',on:{click:addStaff}},'إنشاء كود العضو')),
+    codeBox(),
+    el('div',{class:'card'},el('h3',null,'المواد ('+AR(DB.subjects.length)+')'),DB.subjects.map(s=>el('div',{class:'row'},s.icon+' '+s.name)),el('div',{style:'height:10px'}),subIn,el('button',{class:'ghost block',on:{click:addSub}},'إضافة مادة')),
+    el('div',{class:'card'},el('h3',null,'بيانات التجربة'),p('بيمسح كل اللي اتضاف ويرجّع البيانات الأولى.'),
+      el('button',{class:'ghost danger',on:{click:()=>{ if(!confirm('تمسح بيانات التجربة كلها؟')) return; resetAll().then(logout); }}},'إعادة ضبط التجربة')));
+}
+function tabLog(me){
+  if(!can(me,'viewLog')) return deny();
+  return el('div',{class:'card'},el('h3',null,'سجل النشاط'),
+    DB.log.length?DB.log.map(x=>el('div',{class:'row'},el('div',{class:'grow'},el('b',null,x.who+' '),el('span',{class:'chip'},ROLES[x.role].label),el('div',null,x.text)),el('span',{style:'font-size:14px;color:var(--muted)'},dt(x.ts)))):empty('مفيش نشاط لسه.'));
+}
+
+/* ============ global ============ */
+document.addEventListener('keydown',e=>{
+  if(!E||S.view!=='exam'||document.querySelector('dialog[open]')) return;
+  if(/^[1-4]$/.test(e.key)){ const i=+e.key-1; if(i<E.qs[E.cur].options.length){ E.answers[E.cur]=i; fillExam(); } }
+  else if(e.key==='ArrowLeft'&&E.cur<E.qs.length-1){ E.cur++; fillExam(); }
+  else if(e.key==='ArrowRight'&&E.cur>0){ E.cur--; fillExam(); }
+});
+window.addEventListener('beforeunload',e=>{ if(E&&!E.submitted){ e.preventDefault(); e.returnValue=''; } });
+boot();
+</script>
+</body>
+</html>
